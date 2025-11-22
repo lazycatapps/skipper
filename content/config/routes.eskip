@@ -1,0 +1,115 @@
+// Skipper Routes Configuration (eskip format)
+// Source: https://opensource.zalando.com/skipper/tutorials/basics/
+// Documentation: https://opensource.zalando.com/skipper/reference/eskip/
+//
+// Route syntax: ID: Predicate() -> filter() -> BACKEND
+//
+// Components:
+// - ID: Unique route identifier
+// - Predicate: Request matching rules (path, method, host, headers, etc.)
+// - Filter: Request/response modifications
+// - Backend: Target service URL or static response
+
+// --- Search engine proxies ---
+google_proxy:
+    Path("/google")
+    -> setPath("/")
+    -> "https://www.google.com";
+
+google_search:
+    Path("/google/*rest")
+    -> modPath("^/google", "")
+    -> "https://www.google.com";
+
+google_passthrough:
+    PathRegexp("^/(search|complete|log|gen204|async|images|xjs|recaptcha).*$")
+    -> setRequestHeader("Host", "www.google.com")
+    -> "https://www.google.com";
+
+baidu_proxy:
+    Path("/baidu")
+    -> "https://www.baidu.com";
+
+// --- Lazycat site proxy ---
+lazycat_home:
+    Path("/lazycat")
+    -> setRequestHeader("Host", "lazycat.cloud")
+    -> setPath("/")
+    -> "https://lazycat.cloud";
+
+lazycat_app:
+    Path("/lazycat/*rest")
+    -> setRequestHeader("Host", "lazycat.cloud")
+    -> modPath("^/lazycat", "")
+    -> "https://lazycat.cloud";
+
+lazycat_assets:
+    Path("/_nuxt/*asset")
+    -> setRequestHeader("Host", "lazycat.cloud")
+    -> "https://lazycat.cloud";
+
+lazycat_payload:
+    Path("/_payload/*payload")
+    -> setRequestHeader("Host", "lazycat.cloud")
+    -> "https://lazycat.cloud";
+
+lazycat_icon_favicon:
+    Path("/favicon.ico")
+    -> setRequestHeader("Host", "lazycat.cloud")
+    -> "https://lazycat.cloud";
+
+lazycat_icon_touch:
+    Path("/apple-touch-icon.png")
+    -> setRequestHeader("Host", "lazycat.cloud")
+    -> "https://lazycat.cloud";
+
+lazycat_icon_touch_pre:
+    Path("/apple-touch-icon-precomposed.png")
+    -> setRequestHeader("Host", "lazycat.cloud")
+    -> "https://lazycat.cloud";
+
+// --- Demo utility endpoints ---
+hello_world:
+    Path("/hello")
+    -> inlineContent("Hello from Skipper!")
+    -> <shunt>;
+
+api_proxy:
+    Path("/api/*path")
+    -> modPath("^/api", "")
+    -> "https://jsonplaceholder.typicode.com";
+
+add_headers:
+    Path("/with-headers")
+    -> setRequestHeader("X-Custom-Header", "Skipper")
+    -> setResponseHeader("X-Powered-By", "Skipper")
+    -> "https://httpbin.org/headers";
+
+post_only:
+    Method("POST") && Path("/submit")
+    -> "https://httpbin.org/post";
+
+redirect_example:
+    Path("/old-path")
+    -> redirectTo(301, "https://example.com/new-path")
+    -> <shunt>;
+
+// --- Health, root redirect, and fallback ---
+health:
+    Path("/health")
+    -> status(200)
+    -> inlineContent("OK")
+    -> <shunt>;
+
+root_redirect:
+    Path("/")
+    && PathRegexp("^/$")
+    -> setResponseHeader("Location", "/lzc-skipper-readme")
+    -> status(302)
+    -> <shunt>;
+
+catch_all:
+    *
+    -> status(404)
+    -> inlineContent("Not Found")
+    -> <shunt>;

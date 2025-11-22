@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skipper - HTTP Router and Reverse Proxy</title>
+    <style>
+        :root {
+            --primary-color: #0066cc;
+            --primary-hover: #00aaff;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --bg-light: #f8f9fa;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+                'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background: var(--bg-light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+
+        .lang-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+        }
+
+        .lang-switch:hover {
+            background: var(--primary-hover);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        h3 {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            margin: 25px 0 15px 0;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: var(--info-color);
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: var(--warning-color);
+            color: #856404;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-color: var(--success-color);
+            color: #155724;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #e83e8c;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 4px solid var(--primary-color);
+            margin: 15px 0;
+        }
+
+        pre code {
+            background: none;
+            color: var(--text-color);
+            padding: 0;
+        }
+
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-item {
+            padding: 20px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .feature-item h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #666;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .badge-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .lang-switch {
+                position: static;
+                margin-top: 20px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Skipper</h1>
+            <p class="subtitle" id="subtitle">HTTP Router and Reverse Proxy | HTTP 路由器和反向代理</p>
+            <button class="lang-switch" onclick="toggleLanguage()" id="langBtn">English</button>
+        </header>
+
+        <!-- Chinese Content -->
+        <div id="content-zh" class="content-section active">
+            <div class="card">
+                <h2>关于 Skipper</h2>
+                <p>Skipper 是一个强大的 HTTP 路由器和反向代理,由 Zalando 开发并开源,专为服务组合和高性能场景设计,包括 Kubernetes Ingress 等用例。</p>
+
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>🚀 高性能</h4>
+                        <p>可处理大规模动态路由配置,生产环境支持超过 80 万条路由,每秒 6 万次请求</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🔧 灵活配置</h4>
+                        <p>使用 eskip 格式配置路由,支持丰富的过滤器和谓词</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🎯 功能丰富</h4>
+                        <p>支持路径重写、限流、请求修改、负载均衡等多种功能</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>📊 可观测性</h4>
+                        <p>内置 Prometheus 指标支持,方便监控和分析</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>快速开始</h2>
+
+                <div class="alert alert-info">
+                    <strong>💡 Lazycat 平台部署</strong><br>
+                    在 <a href="https://lazycat.cloud" target="_blank">Lazycat 平台</a>上,你可以一键部署 Skipper,无需手动配置 Docker。部署后即可开始配置路由规则。
+                </div>
+
+                <h3>快速测试链接</h3>
+                <p>点击以下链接测试已配置的路由:</p>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>🔍 搜索引擎代理</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/google" target="_blank">Google 主页</a></li>
+                            <li><a href="/baidu" target="_blank">百度主页</a></li>
+                        </ul>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🐱 Lazycat 平台</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/lazycat" target="_blank">Lazycat 首页</a></li>
+                        </ul>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🧪 示例端点</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/hello" target="_blank">Hello World</a></li>
+                            <li><a href="/health" target="_blank">健康检查</a></li>
+                            <li><a href="/api/users" target="_blank">API 代理示例</a></li>
+                        </ul>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🔄 重定向</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/old-path" target="_blank">重定向示例</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>配置文件位置</h3>
+                <p>在 Lazycat 平台上,路由配置文件位于:</p>
+                <pre><code>/data/appvar/cloud.lazycat.app.liu.skipper/config/routes.eskip</code></pre>
+
+                <h3>路由配置语法</h3>
+                <p>路由使用 eskip 格式配置,基本语法:</p>
+                <pre><code>ID: Predicate() -> filter() -> BACKEND</code></pre>
+
+                <ul>
+                    <li><strong>ID</strong>: 路由唯一标识符</li>
+                    <li><strong>Predicate</strong>: 请求匹配规则(路径、方法、主机、头部等)</li>
+                    <li><strong>Filter</strong>: 请求/响应修改(添加头部、重写路径、限流等)</li>
+                    <li><strong>Backend</strong>: 目标服务 URL 或静态响应</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>配置示例</h2>
+
+                <h3>1. 简单反向代理</h3>
+                <p>将请求代理到后端服务:</p>
+                <pre><code>google: Path("/google") -> "https://www.google.com";</code></pre>
+
+                <h3>2. 静态响应</h3>
+                <p>返回静态内容,无需后端服务:</p>
+                <pre><code>hello: Path("/hello") -> inlineContent("Hello World!") -> &lt;shunt&gt;;</code></pre>
+
+                <h3>3. 路径重写</h3>
+                <p>修改请求路径后转发:</p>
+                <pre><code>api: Path("/api/*path") -> modPath("^/api", "") -> "https://api.example.com";</code></pre>
+
+                <h3>4. 添加请求头</h3>
+                <p>为请求添加自定义头部:</p>
+                <pre><code>headers: Path("/test") -> setRequestHeader("X-Custom", "value") -> "https://backend.com";</code></pre>
+
+                <h3>5. 限流保护</h3>
+                <p>限制客户端请求频率(每分钟 100 次):</p>
+                <pre><code>limited: Path("/limited") -> clientRatelimit(100, "1m") -> "https://backend.com";</code></pre>
+
+                <h3>6. 健康检查</h3>
+                <p>添加健康检查端点:</p>
+                <pre><code>health: Path("/health") -> inlineContent("OK") -> &lt;shunt&gt;;</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>常用测试命令</h2>
+
+                <h3>测试路由</h3>
+                <p>使用以下命令测试你的路由配置:</p>
+                <pre><code id="test-commands-zh"># 测试 Hello World 路由
+curl https://your-domain.com/hello
+
+# 测试代理路由
+curl https://your-domain.com/google
+
+# 测试 API 代理
+curl https://your-domain.com/api/users</code></pre>
+
+                <h3>查看服务状态</h3>
+                <p>Skipper 支持端口(9911)提供管理功能:</p>
+                <pre><code id="admin-commands-zh"># 查看所有加载的路由
+curl http://your-domain.com:9911/routes
+
+# 查看 Prometheus 指标(如果启用)
+curl http://your-domain.com:9911/metrics</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>端口说明</h2>
+                <ul>
+                    <li><strong>9090</strong> - 主 HTTP 代理端口,处理所有路由请求</li>
+                    <li><strong>9911</strong> - 支持/监控端口,提供健康检查、路由查看、指标等功能</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>修改配置</h2>
+
+                <ol>
+                    <li>编辑配置文件 <code>/data/appvar/cloud.lazycat.app.liu.skipper/config/routes.eskip</code></li>
+                    <li>保存文件后,重启 Skipper 服务使配置生效</li>
+                    <li>使用测试命令验证新配置是否正常工作</li>
+                </ol>
+
+                <div class="alert alert-warning">
+                    <strong>⚠️ 注意</strong><br>
+                    修改配置文件后必须重启服务才能生效。建议在修改前先备份原配置文件。
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>进阶功能</h2>
+
+                <h3>启用 Prometheus 指标</h3>
+                <p>通过环境变量启用指标收集:</p>
+                <pre><code>SKIPPER_EXTRA_ARGS=-enable-prometheus-metrics</code></pre>
+                <p>然后通过管理端口访问 <code>http://your-domain.com:9911/metrics</code> 查看指标。</p>
+
+                <h3>配置日志</h3>
+                <p>添加访问日志记录:</p>
+                <pre><code>SKIPPER_EXTRA_ARGS=-access-log-disabled=false</code></pre>
+
+                <h3>负载均衡</h3>
+                <p>配置多个后端服务的负载均衡:</p>
+                <pre><code>lb: Path("/app") -> lbBackend("http://backend1:8080", "http://backend2:8080");</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>官方文档</h2>
+                <p>更多详细配置和功能,请参考官方文档:</p>
+                <ul>
+                    <li><a href="https://opensource.zalando.com/skipper/" target="_blank">Skipper 官方文档</a></li>
+                    <li><a href="https://github.com/zalando/skipper" target="_blank">GitHub 仓库</a></li>
+                    <li><a href="https://opensource.zalando.com/skipper/reference/filters/" target="_blank">Filters 参考</a></li>
+                    <li><a href="https://opensource.zalando.com/skipper/reference/predicates/" target="_blank">Predicates 参考</a></li>
+                    <li><a href="https://opensource.zalando.com/skipper/tutorials/basics/" target="_blank">基础教程</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- English Content -->
+        <div id="content-en" class="content-section">
+            <div class="card">
+                <h2>About Skipper</h2>
+                <p>Skipper is a powerful HTTP router and reverse proxy developed and open-sourced by Zalando, designed for service composition and high-performance scenarios, including use cases like Kubernetes Ingress.</p>
+
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>🚀 High Performance</h4>
+                        <p>Handles large-scale dynamic routing configurations, supporting over 800,000 routes and 60,000 requests per second in production</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🔧 Flexible Configuration</h4>
+                        <p>Configure routes using eskip format with rich filters and predicates</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🎯 Feature Rich</h4>
+                        <p>Supports path rewriting, rate limiting, request modification, load balancing, and more</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>📊 Observability</h4>
+                        <p>Built-in Prometheus metrics support for easy monitoring and analysis</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Quick Start</h2>
+
+                <div class="alert alert-info">
+                    <strong>💡 Lazycat Platform Deployment</strong><br>
+                    On <a href="https://lazycat.cloud" target="_blank">Lazycat Platform</a>, you can deploy Skipper with one click without manual Docker configuration. Start configuring routing rules after deployment.
+                </div>
+
+                <h3>Quick Test Links</h3>
+                <p>Click the links below to test configured routes:</p>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>🔍 Search Engine Proxies</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/google" target="_blank">Google Homepage</a></li>
+                            <li><a href="/baidu" target="_blank">Baidu Homepage</a></li>
+                        </ul>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🐱 Lazycat Platform</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/lazycat" target="_blank">Lazycat Homepage</a></li>
+                        </ul>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🧪 Example Endpoints</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/hello" target="_blank">Hello World</a></li>
+                            <li><a href="/health" target="_blank">Health Check</a></li>
+                            <li><a href="/api/users" target="_blank">API Proxy Example</a></li>
+                        </ul>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🔄 Redirect</h4>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li><a href="/old-path" target="_blank">Redirect Example</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Configuration File Location</h3>
+                <p>On Lazycat platform, the routing configuration file is located at:</p>
+                <pre><code>/data/appvar/cloud.lazycat.app.liu.skipper/config/routes.eskip</code></pre>
+
+                <h3>Routing Configuration Syntax</h3>
+                <p>Routes are configured using eskip format, basic syntax:</p>
+                <pre><code>ID: Predicate() -> filter() -> BACKEND</code></pre>
+
+                <ul>
+                    <li><strong>ID</strong>: Unique route identifier</li>
+                    <li><strong>Predicate</strong>: Request matching rules (path, method, host, headers, etc.)</li>
+                    <li><strong>Filter</strong>: Request/response modifications (add headers, rewrite paths, rate limiting, etc.)</li>
+                    <li><strong>Backend</strong>: Target service URL or static response</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Configuration Examples</h2>
+
+                <h3>1. Simple Reverse Proxy</h3>
+                <p>Proxy requests to a backend service:</p>
+                <pre><code>google: Path("/google") -> "https://www.google.com";</code></pre>
+
+                <h3>2. Static Response</h3>
+                <p>Return static content without a backend service:</p>
+                <pre><code>hello: Path("/hello") -> inlineContent("Hello World!") -> &lt;shunt&gt;;</code></pre>
+
+                <h3>3. Path Rewriting</h3>
+                <p>Modify request path before forwarding:</p>
+                <pre><code>api: Path("/api/*path") -> modPath("^/api", "") -> "https://api.example.com";</code></pre>
+
+                <h3>4. Add Request Headers</h3>
+                <p>Add custom headers to requests:</p>
+                <pre><code>headers: Path("/test") -> setRequestHeader("X-Custom", "value") -> "https://backend.com";</code></pre>
+
+                <h3>5. Rate Limiting</h3>
+                <p>Limit client request frequency (100 requests per minute):</p>
+                <pre><code>limited: Path("/limited") -> clientRatelimit(100, "1m") -> "https://backend.com";</code></pre>
+
+                <h3>6. Health Check</h3>
+                <p>Add health check endpoint:</p>
+                <pre><code>health: Path("/health") -> inlineContent("OK") -> &lt;shunt&gt;;</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>Common Test Commands</h2>
+
+                <h3>Test Routes</h3>
+                <p>Use the following commands to test your routing configuration:</p>
+                <pre><code id="test-commands-en"># Test Hello World route
+curl https://your-domain.com/hello
+
+# Test proxy route
+curl https://your-domain.com/google
+
+# Test API proxy
+curl https://your-domain.com/api/users</code></pre>
+
+                <h3>Check Service Status</h3>
+                <p>Skipper support port (9911) provides management features:</p>
+                <pre><code id="admin-commands-en"># View all loaded routes
+curl http://your-domain.com:9911/routes
+
+# View Prometheus metrics (if enabled)
+curl http://your-domain.com:9911/metrics</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>Port Description</h2>
+                <ul>
+                    <li><strong>9090</strong> - Main HTTP proxy port, handles all routing requests</li>
+                    <li><strong>9911</strong> - Support/monitoring port, provides route viewing, metrics, etc.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Modifying Configuration</h2>
+
+                <ol>
+                    <li>Edit the configuration file <code>/data/appvar/cloud.lazycat.app.liu.skipper/config/routes.eskip</code></li>
+                    <li>After saving, restart the Skipper service for changes to take effect</li>
+                    <li>Use test commands to verify the new configuration works correctly</li>
+                </ol>
+
+                <div class="alert alert-warning">
+                    <strong>⚠️ Note</strong><br>
+                    You must restart the service after modifying the configuration file. It's recommended to backup the original configuration before making changes.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Advanced Features</h2>
+
+                <h3>Enable Prometheus Metrics</h3>
+                <p>Enable metrics collection via environment variable:</p>
+                <pre><code>SKIPPER_EXTRA_ARGS=-enable-prometheus-metrics</code></pre>
+                <p>Then access <code>http://your-domain.com:9911/metrics</code> through the admin port to view metrics.</p>
+
+                <h3>Configure Logging</h3>
+                <p>Add access log recording:</p>
+                <pre><code>SKIPPER_EXTRA_ARGS=-access-log-disabled=false</code></pre>
+
+                <h3>Load Balancing</h3>
+                <p>Configure load balancing across multiple backend services:</p>
+                <pre><code>lb: Path("/app") -> lbBackend("http://backend1:8080", "http://backend2:8080");</code></pre>
+            </div>
+
+            <div class="card">
+                <h2>Official Documentation</h2>
+                <p>For more detailed configuration and features, please refer to the official documentation:</p>
+                <ul>
+                    <li><a href="https://opensource.zalando.com/skipper/" target="_blank">Skipper Official Documentation</a></li>
+                    <li><a href="https://github.com/zalando/skipper" target="_blank">GitHub Repository</a></li>
+                    <li><a href="https://opensource.zalando.com/skipper/reference/filters/" target="_blank">Filters Reference</a></li>
+                    <li><a href="https://opensource.zalando.com/skipper/reference/predicates/" target="_blank">Predicates Reference</a></li>
+                    <li><a href="https://opensource.zalando.com/skipper/tutorials/basics/" target="_blank">Basic Tutorial</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <footer id="footer">
+            <p>Powered by <a href="https://github.com/zalando/skipper" target="_blank">Zalando Skipper</a> | Deployed on <a href="https://lazycat.cloud" target="_blank">Lazycat Platform</a></p>
+            <p>&copy; 2025 Skipper is licensed under Apache License 2.0</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = 'zh';
+
+        // Get current domain from URL
+        function getCurrentDomain() {
+            return window.location.hostname;
+        }
+
+        // Update domain in code examples
+        function updateDomainInExamples() {
+            const domain = getCurrentDomain();
+
+            // Update Chinese test commands
+            const testCommandsZh = document.getElementById('test-commands-zh');
+            if (testCommandsZh) {
+                testCommandsZh.textContent = `# 测试 Hello World 路由
+curl https://${domain}/hello
+
+# 测试代理路由
+curl https://${domain}/google
+
+# 测试 API 代理
+curl https://${domain}/api/users`;
+            }
+
+            // Update Chinese admin commands
+            const adminCommandsZh = document.getElementById('admin-commands-zh');
+            if (adminCommandsZh) {
+                adminCommandsZh.textContent = `# 查看所有加载的路由
+curl http://${domain}:9911/routes
+
+# 查看 Prometheus 指标(如果启用)
+curl http://${domain}:9911/metrics`;
+            }
+
+            // Update English test commands
+            const testCommandsEn = document.getElementById('test-commands-en');
+            if (testCommandsEn) {
+                testCommandsEn.textContent = `# Test Hello World route
+curl https://${domain}/hello
+
+# Test proxy route
+curl https://${domain}/google
+
+# Test API proxy
+curl https://${domain}/api/users`;
+            }
+
+            // Update English admin commands
+            const adminCommandsEn = document.getElementById('admin-commands-en');
+            if (adminCommandsEn) {
+                adminCommandsEn.textContent = `# View all loaded routes
+curl http://${domain}:9911/routes
+
+# View Prometheus metrics (if enabled)
+curl http://${domain}:9911/metrics`;
+            }
+        }
+
+        function toggleLanguage() {
+            const zhContent = document.getElementById('content-zh');
+            const enContent = document.getElementById('content-en');
+            const langBtn = document.getElementById('langBtn');
+            const subtitle = document.getElementById('subtitle');
+
+            if (currentLang === 'zh') {
+                zhContent.classList.remove('active');
+                enContent.classList.add('active');
+                langBtn.textContent = '中文';
+                subtitle.textContent = 'HTTP Router and Reverse Proxy';
+                document.documentElement.lang = 'en';
+                currentLang = 'en';
+            } else {
+                enContent.classList.remove('active');
+                zhContent.classList.add('active');
+                langBtn.textContent = 'English';
+                subtitle.textContent = 'HTTP Router and Reverse Proxy | HTTP 路由器和反向代理';
+                document.documentElement.lang = 'zh';
+                currentLang = 'zh';
+            }
+        }
+
+        // Initialize domain replacement when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDomainInExamples();
+        });
+    </script>
+</body>
+</html>
